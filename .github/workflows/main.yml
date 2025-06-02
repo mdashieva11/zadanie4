@@ -14,13 +14,14 @@ jobs:
       - name: Проверка кода
         uses: actions/checkout@v4
 
-      - name: Переименование файла requirements
+      - name: Подготовка файлов
         run: |
-          mv requirements.txt requiremens.txt
-
-      - name: Создание рабочей директории
-        run: |
-          mkdir -p not_existing_folder
+          # Создаем временную копию Dockerfile
+          cp Dockerfile Dockerfile.tmp
+          # Заменяем неправильный тег на правильный
+          sed -i 's/3.11-slim-wrongtag/3.11-slim/g' Dockerfile.tmp
+          # Создаем requiremens.txt (с опечаткой, как в Dockerfile)
+          echo "flask==3.0.0" > requiremens.txt
 
       - name: Логин в Docker Hub
         uses: docker/login-action@v3
@@ -35,9 +36,13 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
+          file: ./Dockerfile.tmp
           push: true
           tags: |
             dashieva2202/zadanie4:latest
             dashieva2202/zadanie4:${{ github.sha }}
-          build-args: |
-            PYTHON_VERSION=3.11-slim
+
+      - name: Очистка
+        if: always()
+        run: |
+          rm -f Dockerfile.tmp
